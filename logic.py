@@ -1,7 +1,7 @@
 import sqlite3
 from config import DATABASE
 
-skills = [ (_,) for _ in (['Python', 'SQL', 'API', 'Discord'])]
+skills = [ (_,) for _ in (['Python', 'SQL', 'API', 'Discord', 'Flask', 'HTML', 'CSS', 'C#', 'Unity'])]
 statuses = [ (_,) for _ in (['Prototip Oluşturma', 'Geliştirme Aşamasında', 'Tamamlandı, kullanıma hazır', 'Güncellendi', 'Tamamlandı, ancak bakımı yapılmadı'])]
 
 class DB_Manager:
@@ -18,6 +18,7 @@ class DB_Manager:
                             description TEXT,
                             url TEXT,
                             status_id INTEGER,
+                            partner_id INTEGER,
                             FOREIGN KEY(status_id) REFERENCES status(status_id)
                         )''') 
             conn.execute('''CREATE TABLE skills (
@@ -34,6 +35,8 @@ class DB_Manager:
                             status_id INTEGER PRIMARY KEY,
                             status_name TEXT
                         )''')
+            
+            conn.execute(f"ALTER TABLE projects ADD COLUMN IF NOT EXISTS partner_id INTEGER")
             conn.commit()
 
     def __executemany(self, sql, data):
@@ -73,6 +76,14 @@ class DB_Manager:
         sql = 'INSERT OR IGNORE INTO project_skills VALUES(?, ?)'
         self.__executemany(sql, data)
 
+    def insert_skill_many(self, user_id, project_name, skills: list):
+        sql = 'SELECT project_id FROM projects WHERE project_name = ? AND user_id = ?'
+        project_id = self.__select_data(sql, (project_name, user_id))[0][0]
+        skill_ids = [self.__select_data('SELECT skill_id FROM skills WHERE skill_name = ?', (skill,))[0][0] for skill in skills]
+        data = [(project_id, skill_id) for skill_id in skill_ids]
+        sql = 'INSERT OR IGNORE INTO project_skills VALUES(?, ?)'
+        self.__executemany(sql, data)
+
 
     def get_statuses(self):
         sql="SELECT status_name from status"
@@ -107,7 +118,7 @@ class DB_Manager:
         sql = """
             SELECT project_name, description, url, status_name FROM projects 
             JOIN status ON
-            status.status_id = projects.status_id)
+            status.status_id = projects.status_id
             WHERE project_name=? AND user_id=?
             """
         return self.__select_data(sql=sql, data = (project_name, user_id))
@@ -129,6 +140,24 @@ class DB_Manager:
             WHERE skill_id = ? AND project_id = ? """
         self.__executemany(sql, [(skill_id, project_id)])
 
+    def clear_tables(self):
+        conn = sqlite3.connect(self.database)
+        with conn:
+            conn.execute("DELETE FROM skills")
+            conn.execute("DELETE FROM status")
+            conn.execute("DELETE FROM projects")
+            conn.execute("DELETE FROM project_skills")
+            conn.commit()
+
+
 
 if __name__ == '__main__':
     manager = DB_Manager(DATABASE)
+    manager.clear_tables()
+    manager.default_insert()
+
+    manager.insert_project([(1, "MyHackatohnProject", "https://github.com/Endermen9424/MyHackatohnProject", 3),
+                            (1, "Night-Watchman", "https://github.com/Endermen9424/Night-Watchman", 3)])
+
+    manager.insert_skill_many(1, "MyHackatohnProject", ["Python", "Flask", "HTML", "CSS"])
+    manager.insert_skill(1, "Night-Watchman", "Unity")
