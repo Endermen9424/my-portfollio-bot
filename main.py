@@ -3,22 +3,27 @@ from discord.ext import commands
 from logic import DB_Manager
 from config import DATABASE, token
 
+# Bot ayarları
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 
+# Bot ve veritabanı yöneticisi oluşturma
 bot = commands.Bot(command_prefix='!', intents=intents)
 manager = DB_Manager(DATABASE)
 
+# Bot hazır olduğunda çalışacak olay
 @bot.event
 async def on_ready():
     print(f'Bot hazır! {bot.user} olarak giriş yapıldı.')
 
+# !start komutnu yazarak neler botu tanıyabilir ve neler yapabileceğinizi öğrenebilirsiniz
 @bot.command(name='start')
 async def start_command(ctx):
     await ctx.send("Merhaba! Ben bir proje yöneticisi botuyum.\nProjelerinizi ve onlara dair tüm bilgileri saklamanıza yardımcı olacağım! =)")
     await info(ctx)
 
+# !info komutunu yazarak neler yapabileceğinizi öğrenebilirsiniz
 @bot.command(name='info')
 async def info(ctx):
     await ctx.send("""
@@ -32,6 +37,7 @@ Kullanabileceğiniz komutlar şunlardır:
 
 Ayrıca, proje adını yazarak projeyle ilgili tüm bilgilere göz atabilirsiniz!""")
 
+# Yeni bir proje ekliyebilirsiniz
 @bot.command(name='new_project')
 async def new_project(ctx):
     await ctx.send("Lütfen projenin adını girin!")
@@ -59,6 +65,7 @@ async def new_project(ctx):
     manager.insert_project([tuple(data)])
     await ctx.send("Proje kaydedildi")
 
+# Tüm projelerinizi listeleyebilirsiniz
 @bot.command(name='projects')
 async def get_projects(ctx):
     user_id = ctx.author.id
@@ -69,6 +76,7 @@ async def get_projects(ctx):
     else:
         await ctx.send('Henüz herhangi bir projeniz yok!\nBir tane eklemeyi düşünün! !new_project komutunu kullanabilirsiniz.')
 
+# Proje adını yazarak o projeye skills ekliyebilirsiniz
 @bot.command(name='skills')
 async def skills(ctx):
     user_id = ctx.author.id
@@ -100,6 +108,7 @@ async def skills(ctx):
     else:
         await ctx.send('Henüz herhangi bir projeniz yok!\nBir tane eklemeyi düşünün! !new_project komutunu kullanabilirsiniz.')
 
+# Proje adını yazarak o projeyi silebilirsiniz
 @bot.command(name='delete')
 async def delete_project(ctx):
     user_id = ctx.author.id
@@ -123,6 +132,7 @@ async def delete_project(ctx):
     else:
         await ctx.send('Henüz herhangi bir projeniz yok!\nBir tane eklemeyi düşünün! !new_project komutunu kullanabilirsiniz.')
 
+# Proje adını yazarak o projedeki herhangi bir datayı güncelleyebilirsiniz
 @bot.command(name='update_projects')
 async def update_projects(ctx):
     user_id = ctx.author.id
